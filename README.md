@@ -20,7 +20,7 @@ Aşamaları nasıl yaptığımı anlatacağım.
 
  
 
-KISIMDA  
+1. KISIMDA  
 
 Web Scraping ve Kafka'ya Veri Gönderme 
 
@@ -42,101 +42,15 @@ Web Scraping ve Kafka'ya Veri Gönderme Kodu:
 
 scrape_and_send_to_kafka.js adlı bir dosya oluşturdum ve aşağıdaki kodu ekledim 
 
-const axios = require('axios'); 
 
-const cheerio = require('cheerio'); 
+ <img width="942" alt="Ekran Resmi 2024-07-22 19 05 48" src="https://github.com/user-attachments/assets/2566fe33-e0dd-4233-b4f9-afc0898c4f26">
 
-const { Kafka } = require('kafkajs'); 
-
-const fs = require('fs'); 
-
- 
-
-// Kafka ayarları 
-
-const kafka = new Kafka({ 
-
-clientId: 'my-app', 
-
-brokers: ['localhost:9092'], 
-
-}); 
-
- 
-
-const producer = kafka.producer(); 
-
-const topic = 'digital-brain-topic'; 
-
- 
-
-// Web scraping ve Kafka'ya veri gönderme 
-
-const scrapeAndSend = async () => { 
-
-try { 
-
-await producer.connect(); 
-
- 
-
-const response = await axios.get('https://scrapeme.live/shop/'); 
-
-const $ = cheerio.load(response.data); 
-
- 
-
-const products = $('li.product').map((i, el) => ({ 
-
-name: $(el).find('h2.woocommerce-loop-product__title').text().trim(), 
-
-price: $(el).find('span.woocommerce-Price-amount.amount').text().trim(), 
-
-link: $(el).find('a').attr('href'), 
-
-})).get(); 
-
- 
-
-for (const product of products) { 
-
-await producer.send({ 
-
-topic, 
-
-messages: [{ value: JSON.stringify(product) }], 
-
-}); 
-
-console.log(`Sent to Kafka: ${JSON.stringify(product)}`); 
-
-await new Promise(resolve => setTimeout(resolve, 1000)); // 1 saniye bekle 
-
-} 
-
-} catch (error) { 
-
-console.error('Error:', error); 
-
-} finally { 
-
-await producer.disconnect(); 
-
-} 
-
-}; 
-
- 
-
-scrapeAndSend(); 
 
  
 
  
 
- 
-
-KISIMDA  
+2. KISIMDA  
 
  
 
@@ -150,69 +64,13 @@ Gerekli Paketleri Kurdum “npm install kafkajs”
 
 save_to_file.js adlı bir dosya oluşturdum ve aşağıdaki kodu ekledim: 
 
-const { Kafka } = require('kafkajs'); 
-
-const fs = require('fs'); 
-
- 
-
-// Kafka ayarları 
-
-const kafka = new Kafka({ 
-
-clientId: 'my-app', 
-
-brokers: ['localhost:9092'], 
-
-}); 
-
- 
-
-const consumer = kafka.consumer({ groupId: 'my-group' }); 
-
-const topic = 'digital-brain-topic'; 
-
- 
-
-const saveToFile = async () => { 
-
-await consumer.connect(); 
-
-await consumer.subscribe({ topic, fromBeginning: true }); 
-
- 
-
-const dataFile = 'data.json'; 
-
-const stream = fs.createWriteStream(dataFile, { flags: 'a' }); 
-
- 
-
-await consumer.run({ 
-
-eachMessage: async ({ message }) => { 
-
-const data = message.value.toString(); 
-
-stream.write(`${data}\n`); 
-
-console.log(`Data written to file: ${data}`); 
-
-}, 
-
-}); 
-
-}; 
-
- 
-
-saveToFile().catch(console.error); 
+<img width="555" alt="Ekran Resmi 2024-07-22 19 06 46" src="https://github.com/user-attachments/assets/c3b019f2-9c9c-4e8e-ad68-509f9fc7a05f">
 
  
 
  
 
-KISIMDA 
+3. KISIMDA 
 
 REST API Servisi Oluşturma 
 
@@ -226,115 +84,34 @@ REST API Servisi Kodu:
 
 rest_api.js adlı bir dosya oluşturdum ve aşağıdaki kodu ekledim: 
 
-const express = require('express'); 
 
-const fs = require('fs'); 
+ <img width="741" alt="Ekran Resmi 2024-07-22 19 08 31" src="https://github.com/user-attachments/assets/340630e7-8d88-40aa-b1b9-3858d56d8e48">
 
-const app = express(); 
-
-const port = 3000; 
-
-const dataFile = 'data.json'; 
 
  
+4. KISIMDA
 
-// Dosyadan veri okuma 
-
-const readDataFromFile = () => { 
-
-if (fs.existsSync(dataFile)) { 
-
-const rawData = fs.readFileSync(dataFile, 'utf-8').split('\n').filter(line => line.trim()); 
-
-const validData = []; 
-
+   server.js adında bir dosya oluşturarak aşağıdaki kodu içine ekledim 
  
+<img width="952" alt="Ekran Resmi 2024-07-22 19 10 43" src="https://github.com/user-attachments/assets/e62c1445-fd35-4c40-8a0f-1c1da4c9da26">
 
-rawData.forEach(line => { 
 
-try { 
 
-// JSON.parse işlemi yapılırken hata yönetimi eklenir 
 
-const jsonData = JSON.parse(line); 
+Bu kod Node.js ve Express.js kullanarak basit bir REST API sunucusu oluşturur. Bu API, bir dosyadan (data.json) ürün bilgilerini okur ve bu bilgileri iki farklı endpoint aracılığıyla sunar.
 
-validData.push(jsonData); 
+Sunucuyu Başlatma:
 
-} catch (err) { 
+javascript
+Kodu kopyala
+app.listen(port, () => {
+  console.log(`REST API listening at http://localhost:${port}`);
+});
+Bu bölüm, Express.js sunucusunu belirtilen portta (3001) başlatır ve sunucunun başarılı bir şekilde çalıştığını belirten bir mesaj konsola yazdırır.
 
-// Geçersiz JSON verileri console'a yazdırılır 
 
-console.error('Invalid JSON line:', line); 
+Bu kod, dosya tabanlı bir veri kaynağından veri okuyan ve bu veriyi RESTful API endpoint'leri aracılığıyla sunan basit bir web sunucusu oluşturur. data.json dosyasında bulunan ürün verilerini /products ve /products/:name endpoint'leri üzerinden erişilebilir hale getirir.
 
-} 
-
-}); 
-
- 
-
-return validData; 
-
-} else { 
-
-return []; 
-
-} 
-
-}; 
-
- 
-
-// REST API endpoint'leri 
-
-app.get('/products', (req, res) => { 
-
-try { 
-
-const data = readDataFromFile(); 
-
-res.json(data); 
-
-} catch (error) { 
-
-res.status(500).json({ message: 'Error reading data', error }); 
-
-} 
-
-}); 
-
- 
-
-app.get('/products/:name', (req, res) => { 
-
-try { 
-
-const data = readDataFromFile(); 
-
-const result = data.filter(product => product.name === req.params.name); 
-
-res.json(result.length ? result : { message: 'Product not found' }); 
-
-} catch (error) { 
-
-res.status(500).json({ message: 'Error reading data', error }); 
-
-} 
-
-}); 
-
- 
-
-app.listen(port, () => { 
-
-console.log(`REST API listening at http://localhost:${port}`); 
-
-}); 
-
- 
-
- 
-
- 
 
 SONUÇ OLARAK: 
 
